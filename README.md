@@ -2,6 +2,17 @@
 Save the source code for the local Distributed System
 
 
+Download the source data here: 
+https://www.kaggle.com/datasets/ltcmdrdata/plain-text-wikipedia-202011?resource=download
+
+[1]kaggle: Plain Text Wikipedia 2020-11
+ 
+[2]Wikipedia text download: 
+https://stackoverflow.com/questions/2683506/wikipedia-text-download
+
+[3] a0:
+https://student.cs.uwaterloo.ca/~cs451/assignment0-451.html 
+
 project-root/
 ├── pom.xml                             # Maven 配置文件(必需)
 ├── src/

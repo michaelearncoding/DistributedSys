@@ -63,3 +63,5 @@ hdfs dfs -put data/wiki_sample_processed.txt /user/hadoop/data/
 
 hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs651.a0.PerfectX data/wiki_sample_processed.txt pxhdfs
 
+hdfs dfs -cat /user/hadoop/px/part-r-00000
+
