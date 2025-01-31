@@ -26,3 +26,7 @@ project-root/
 │       ├── java/                       # Test source code
 │       └── resources/                  # Test resource files (optional)
 └── target/                             # Compiled output directory (auto-generated)
+
+
+project-root/ ├── pom.xml # Maven configuration file (required) ├── src/ │ ├── main/ # Main source directory │ │ ├── java/ # Java source code │ │ │ └── [package structure] # Source code organized by package name │ │ └── resources/ # Resource files directory (optional) │ └── test/ # Test source directory │ ├── java/ # Test source code │ └── resources/ # Test resource files (optional) └── target/ # Compiled output directory (auto-generated)
+
