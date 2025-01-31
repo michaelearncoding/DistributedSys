@@ -29,3 +29,20 @@ project-root/
 
 
 
+map reduce：
+
+输入文本:
+"This is perfect weather. The perfect timing."
+
+Map阶段输出:
+<"weather", 1>
+<"timing", 1>
+
+Shuffle & Sort阶段:
+按key分组
+"weather" -> [1]
+"timing" -> [1]
+
+Reduce阶段:
+如果计数>1才输出
+
