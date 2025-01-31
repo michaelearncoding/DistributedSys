@@ -1,0 +1,33 @@
+. Hadoop NameNode Web UI
+用于查看HDFS的状态和管理HDFS。
+
+默认端口：9870
+访问URL：http://localhost:9870
+
+
+2. YARN ResourceManager Web UI
+用于查看YARN的状态和管理YARN应用程序。
+
+默认端口：8088
+访问URL：http://localhost:8088
+
+
+3. Hadoop DataNode Web UI
+用于查看DataNode的状态。
+
+默认端口：9864
+访问URL：http://localhost:9864
+
+
+4. YARN NodeManager Web UI
+用于查看NodeManager的状态。
+
+默认端口：8042
+访问URL：http://localhost:8042
+
+
+5. SecondaryNameNode Web UI
+用于查看SecondaryNameNode的状态。
+
+默认端口：9868
+访问URL：http://localhost:9868
