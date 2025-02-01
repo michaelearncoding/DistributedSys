@@ -1,5 +1,11 @@
-# DistributedSys
-Save the source code for the local Distributed System
+# Distributed Systems Project
+
+This repository contains the source code for a distributed system project focusing on MapReduce implementations.
+
+## Data Sources
+The data used in this project can be downloaded from:
+- [Kaggle: Plain Text Wikipedia 2020-11](https://www.kaggle.com/ltcmdrdata/plain-text-wikipedia-202011)
+- Additional information about Wikipedia text download can be found on Stack Overflow.
 
 use Dockerfile & start-all.sh to build a docker image and run a container
 
@@ -15,58 +21,64 @@ use the pom.xml directly,
 
 
 
-Download the source data here: 
-https://www.kaggle.com/datasets/ltcmdrdata/plain-text-wikipedia-202011?resource=download
-
-[1]kaggle: Plain Text Wikipedia 2020-11
- 
-[2]Wikipedia text download: 
-https://stackoverflow.com/questions/2683506/wikipedia-text-download
-
-[3] a0:
-https://student.cs.uwaterloo.ca/~cs451/assignment0-451.html 
-
+## Project Structure
+```text
 project-root/
-├── pom.xml                             # Maven 配置文件(必需)
+├── pom.xml           # Maven configuration file (required)
 ├── src/
-│   ├── main/                           # 主代码目录
-│   │   ├── java/                       # Java 源代码
-│   │   │   └── [包结构目录]           # 按包名组织的源代码
-│   │   └── resources/                  # 资源文件目录(可选)
-│   └── test/                           # 测试代码目录
-│       ├── java/                       # 测试源代码
-│       └── resources/                  # 测试资源文件(可选)
-└── target/                             # 编译输出目录(自动生成)
+│   ├── main/
+│   │   ├── java/     # Java source code organized by package structure
+│   │   └── resources/ # Resource files directory (optional)
+│   └── test/
+│       ├── java/     # Test source code
+│       └── resources/# Test resource files (optional)
+└── target/           # Compiled output directory (auto-generated)
+```
+
+## Environment Setup
+
+```text
+# First time
+
+docker build -t hadoop-pseudo-distributed .
+
+docker stop hadoop-pseudo
+
+docker rm hadoop-pseudo
+
+docker run -it --name hadoop-pseudo -v /Users/MakeUpusername/Desktop/helloHaddop:/mnt/helloHaddop -p 9870:9870 -p 8088:8088 -p 9000:9000 -p 8042:8042 -p 9864:9864 -p 9868:9868 -p 8080:8080 -p 8081:8081 hadoop-pseudo-distributed
+
+# enter the container through local terminal：
+docker exec -it hadoop-pseudo /bin/bash
+
+cd /mnt/helloHaddop/
+
+# Hadoop Cmd
+# Have to use the Maven clean package! to generate the jar
+hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs651.a0.WordCount -input data/Shakespeare.txt -output wc
+```
 
 
-project-root/
-├── pom.xml                             # Maven configuration file (required)
-├── src/
-│   ├── main/                           # Main source directory
-│   │   ├── java/                       # Java source code
-│   │   │   └── [package structure]     # Source code organized by package name
-│   │   └── resources/                  # Resource files directory (optional)
-│   └── test/                           # Test source directory
-│       ├── java/                       # Test source code
-│       └── resources/                  # Test resource files (optional)
-└── target/                             # Compiled output directory (auto-generated)
+## MapReduce Example
 
+**Input Text:**  
+" This is perfect weather. The perfect timing."
 
-
-map reduce：
-
-输入文本:
-"This is perfect weather. The perfect timing."
-
-Map阶段输出:
+**Map Phase Output:**  
+```text
 <"weather", 1>
 <"timing", 1>
+```
+Shuffle & Sort Phase:
 
-Shuffle & Sort阶段:
-按key分组
+Group by keys:
+```text
 "weather" -> [1]
 "timing" -> [1]
+```
 
-Reduce阶段:
-如果计数>1才输出
+Reduce Phase:
+
+Only output if count > 1.
+
 
