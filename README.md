@@ -7,6 +7,17 @@ The data used in this project can be downloaded from:
 - [Kaggle: Plain Text Wikipedia 2020-11](https://www.kaggle.com/ltcmdrdata/plain-text-wikipedia-202011)
 - Additional information about Wikipedia text download can be found on Stack Overflow.
 
+
+## MapReduce Example
+
+**Input Text:**  
+" This is perfect weather. The perfect timing."
+
+**Map Phase Output:**  
+```text
+<"weather", 1>
+<"timing", 1>
+
 ## Project Structure
 ```text
 project-root/
@@ -19,3 +30,5 @@ project-root/
 │       ├── java/     # Test source code
 │       └── resources/# Test resource files (optional)
 └── target/           # Compiled output directory (auto-generated)
+
+
