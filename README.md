@@ -4,7 +4,7 @@ This repository contains the source code for a distributed system project focusi
 
 ## Data Sources
 The data used in this project can be downloaded from:
-- [Kaggle: Plain Text Wikipedia 2020-11](https://www.kaggle. com/ltcmdrdata/ plain-text-wikipedia-202011)
+- [Kaggle: Plain Text Wikipedia 2020-11](https://www.kaggle.com/ltcmdrdata/plain-text-wikipedia-202011)
 - Additional information about Wikipedia text download can be found on Stack Overflow.
 
 ## Project Structure
