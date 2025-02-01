@@ -8,6 +8,44 @@ The data used in this project can be downloaded from:
 - Additional information about Wikipedia text download can be found on Stack Overflow.
 
 
+## Project Structure
+```text
+project-root/
+├── pom.xml           # Maven configuration file (required)
+├── src/
+│   ├── main/
+│   │   ├── java/     # Java source code organized by package structure
+│   │   └── resources/ # Resource files directory (optional)
+│   └── test/
+│       ├── java/     # Test source code
+│       └── resources/# Test resource files (optional)
+└── target/           # Compiled output directory (auto-generated)
+```
+
+## Environment Setup
+
+```text
+# First time
+
+docker build -t hadoop-pseudo-distributed .
+
+docker stop hadoop-pseudo
+
+docker rm hadoop-pseudo
+
+docker run -it --name hadoop-pseudo -v /Users/MakeUpusername/Desktop/helloHaddop:/mnt/helloHaddop -p 9870:9870 -p 8088:8088 -p 9000:9000 -p 8042:8042 -p 9864:9864 -p 9868:9868 -p 8080:8080 -p 8081:8081 hadoop-pseudo-distributed
+
+# enter the container through local terminal：
+docker exec -it hadoop-pseudo /bin/bash
+
+cd /mnt/helloHaddop/
+
+# Hadoop Cmd
+# Have to use the Maven clean package! to generate the jar
+hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs651.a0.WordCount -input data/Shakespeare.txt -output wc
+```
+
+
 ## MapReduce Example
 
 **Input Text:**  
@@ -30,17 +68,4 @@ Reduce Phase:
 
 Only output if count > 1.
 
-## Project Structure
-```text
-project-root/
-├── pom.xml           # Maven configuration file (required)
-├── src/
-│   ├── main/
-│   │   ├── java/     # Java source code organized by package structure
-│   │   └── resources/ # Resource files directory (optional)
-│   └── test/
-│       ├── java/     # Test source code
-│       └── resources/# Test resource files (optional)
-└── target/           # Compiled output directory (auto-generated)
-```
 
