@@ -1,0 +1,230 @@
+mkdir -p src/main/java/ca/uwaterloo/cs451/a0
+
+mv oldfolder newfolder
+
+curl -o pom.xml https://student.cs.uwaterloo.ca/~cs451/assignments/pom.xml
+
+cp bespin/src/main/java/io/bespin/java/mapreduce/wordcount/WordCountSimple.java /Users/qingdamai/Desktop/helloHaddop/src/main/java/ca/uwaterloo/cs651/a0
+
+# before this, do: 
+
+touch filename.txt
+
+src/main/java/io/bespin/java/mapreduce/wordcount/WordCount.java
+# Download/copy form https://github.com/lintool/bespin/blob/master/src/main/java/io/bespin/java/mapreduce/wordcount/WordCount.java
+
+touch WordCount.java
+
+vim ...
+
+docker ps -a
+
+
+docker start hadoop-spark
+
+docker exec -it hadoop-spark bash
+
+# need to add the volumn to the container
+
+docker run -it --name hadoop-spark -v /Users/qingdamai/Desktop/helloHaddop:/mnt/helloHaddop hadoop-spark-image
+
+
+# not working because it's not a actuall imgate and i dont want to destroy it
+
+
+# here is the step to follow in order to make it 
+docker volume create helloHaddop
+
+docker run -it --name hadoop-spark -v /Users/qingdamai/Desktop/helloHaddop:/mnt/helloHaddop waterloocs651:latest
+
+cd /mnt/helloHaddop/src/main/java/ca/uwaterloo/cs651/a0
+
+cd /mnt/helloHaddop/
+
+
+bash
+
+
+mvn clean package
+
+
+hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs651.a0.WordCount \
+   -input data/Shakespeare.txt -output wc
+
+hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs651.a0.WordCount    -input data/Shakespeare.txt -output wc
+
+
+
+# make sure the namenode is activated 
+hdfs namenode -format  # 如果是第一次启动，需要格式化NameNode
+
+
+
+
+
+
+
+
+
+# Rebuild! 
+cd "CS  451:CS 651 Data-Intensive Distributed Computing"
+
+docker build -t hadoop-pseudo-distributed .
+
+docker run -it --name hadoop-pseudo -v /Users/qingdamai/Desktop/helloHaddop:/mnt/helloHaddop hadoop-pseudo-distributed
+
+#imporved version
+
+docker run -it --name hadoop-pseudo -v /Users/qingdamai/Desktop/helloHaddop:/mnt/helloHaddop -p 9870:9870 -p 8088:8088 -p 9000:9000 -p 8042:8042 hadoop-pseudo-distributed
+
+
+hdfs dfs -ls /
+
+# 在macOS本地使用Hadoop客户端访问运行在Docker容器中的HDFS。如果你在访问过程中遇到问题，请检查Docker容器的配置和日志，以确定问题的根本原因。
+
+qingdamai$ brew list --versions hadoop
+hadoop 3.4.1
+
+
+25 Winter: brew --prefix hadoop
+/opt/homebrew/opt/hadoop
+
+nano /opt/homebrew/opt/hadoop/libexec/etc/hadoop/core-site.xml
+
+hdfs dfs -ls /
+
+jps
+
+
+
+1. Hadoop NameNode Web UI
+用于查看HDFS的状态和管理HDFS。
+
+默认端口：9870
+访问URL：http://localhost:9870
+
+
+
+2. YARN ResourceManager Web UI
+用于查看YARN的状态和管理YARN应用程序。
+
+默认端口：8088
+访问URL：http://localhost:8088
+
+
+3. Hadoop DataNode Web UI
+用于查看DataNode的状态。
+
+默认端口：9864
+访问URL：http://localhost:9864
+
+
+4. YARN NodeManager Web UI
+用于查看NodeManager的状态。
+
+默认端口：8042
+访问URL：http://localhost:8042
+
+
+5. SecondaryNameNode Web UI
+用于查看SecondaryNameNode的状态。
+
+默认端口：9868
+访问URL：http://localhost:9868
+
+
+# 以下的命令来： 
+
+docker build -t hadoop-pseudo-distributed .
+
+docker run -it --name hadoop-pseudo -v /Users/qingdamai/Desktop/helloHaddop:/mnt/helloHaddop -p 9870:9870 -p 8088:8088 -p 9000:9000 -p 8042:8042 hadoop-pseudo-distributed
+
+hdfs dfs -ls /
+
+
+http://localhost:9870/dfshealth.html#tab-overview
+
+
+# 启动所有的端口： 
+
+docker stop hadoop-pseudo
+docker rm hadoop-pseudo
+docker run -it --name hadoop-pseudo -v /Users/qingdamai/Desktop/helloHaddop:/mnt/helloHaddop -p 9870:9870 -p 8088:8088 -p 9000:9000 -p 8042:8042 -p 9864:9864 -p 9868:9868 hadoop-pseudo-distributed
+
+docker run -it --name hadoop-pseudo -v /Users/qingdamai/Desktop/helloHaddop:/mnt/helloHaddop -p 9870:9870 -p 8088:8088 -p 9000:9000 -p 8042:8042 -p 9864:9864 -p 9868:9868 -p 8080:8080 -p 8081:8081 hadoop-pseudo-distributed
+
+
+
+
+
+
+docker exec -it hadoop-pseudo /bin/bash
+
+cd /mnt/helloHaddop/
+
+hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs651.a0.WordCount -input data/Shakespeare.txt -output wc
+#########################
+
+
+hdfs dfs -ls /user/hadoop/wc
+hdfs dfs -cat /user/hadoop/wc/part-r-00000
+
+
+通过以上步骤，你已经成功运行了Hadoop作业，并验证了输出。以下是一些关键点：
+
+修改启动脚本：确保所有Hadoop守护进程在同一个容器中启动，并避免使用SSH。
+修改Hadoop配置：确保Hadoop配置文件正确配置，以避免使用SSH。
+上传输入文件到HDFS：确保输入文件存在于HDFS中。
+运行Hadoop作业：成功运行Hadoop作业，并验证输出。
+如果你在访问过程中遇到问题，请检查Docker容器的配置和日志，以确定问题的根本原因。
+
+
+
+##########################
+
+nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
+
+
+<configuration>
+  <property>
+    <name>mapreduce.framework.name</name>
+    <value>yarn</value>
+  </property>
+  <property>
+    <name>yarn.app.mapreduce.am.env</name>
+    <value>HADOOP_MAPRED_HOME=/usr/local/hadoop</value>
+  </property>
+  <property>
+    <name>mapreduce.map.env</name>
+    <value>HADOOP_MAPRED_HOME=/usr/local/hadoop</value>
+  </property>
+  <property>
+    <name>mapreduce.reduce.env</name>
+    <value>HADOOP_MAPRED_HOME=/usr/local/hadoop</value>
+  </property>
+</configuration>
+
+
+cat $HADOOP_HOME/etc/hadoop/mapred-site.xml
+
+
+$HADOOP_HOME/sbin/stop-yarn.sh
+$HADOOP_HOME/sbin/stop-dfs.sh
+$HADOOP_HOME/sbin/start-dfs.sh
+$HADOOP_HOME/sbin/start-yarn.sh
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

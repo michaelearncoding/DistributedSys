@@ -1,6 +1,19 @@
 # DistributedSys
 Save the source code for the local Distributed System
 
+use Dockerfile & start-all.sh to build a docker image and run a container
+
+make sure the port & necessary local file path is created, so that the code file can be created by the local IDE (persional dev environment)
+
+mkdir -p src/main/java/ca/uwaterloo/cs451/a0
+
+use the cmd "maven clean pacakge " to build the jar, which will be needed when calling hadoop
+(More Java Library API docs...)
+
+use the pom.xml directly, 
+
+
+
 
 Download the source data here: 
 https://www.kaggle.com/datasets/ltcmdrdata/plain-text-wikipedia-202011?resource=download
