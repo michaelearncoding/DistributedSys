@@ -13,12 +13,22 @@ The data used in this project can be downloaded from:
 **Input Text:**  
 " This is perfect weather. The perfect timing."
 
-
-
 **Map Phase Output:**  
 ```text
 <"weather", 1>
 <"timing", 1>
+```
+Shuffle & Sort Phase:
+
+Group by keys:
+```text
+"weather" -> [1]
+"timing" -> [1]
+```
+
+Reduce Phase:
+
+Only output if count > 1.
 
 ## Project Structure
 ```text
