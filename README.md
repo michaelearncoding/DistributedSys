@@ -13,6 +13,8 @@ The data used in this project can be downloaded from:
 **Input Text:**  
 " This is perfect weather. The perfect timing."
 
+
+
 **Map Phase Output:**  
 ```text
 <"weather", 1>
@@ -30,5 +32,5 @@ project-root/
 │       ├── java/     # Test source code
 │       └── resources/# Test resource files (optional)
 └── target/           # Compiled output directory (auto-generated)
-
+```
 
