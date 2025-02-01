@@ -58,6 +58,34 @@ cd /mnt/helloHaddop/
 hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs651.a0.WordCount -input data/Shakespeare.txt -output wc
 ```
 
+## Go Environment Setup
+### 1. Create Go Workspace
+```bash
+# Create Go workspace directories
+mkdir -p ~/go/{bin,pkg,src}
+
+```text
+~/go/
+├── bin/   # Compiled executables
+├── pkg/   # Compiled packages
+└── src/   # Source code
+```
+
+### 2. Configure Environment
+#### Add to ~/.zshrc or ~/.bash_profile
+echo 'export GOPATH=$HOME/go' >> ~/.zshrc
+echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.zshrc
+source ~/.zshrc
+
+### 3. Verify Setup
+#### Check GOPATH
+echo $GOPATH
+
+#### View Go environment
+go env
+
+#### Test installation
+go version
 
 ## MapReduce Example
 
