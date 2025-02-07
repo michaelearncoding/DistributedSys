@@ -1,5 +1,7 @@
 package ca.uwaterloo.cs651.a1; // Package declaration
 
+import java.io.File;
+
 import io.bespin.java.util.Tokenizer;  // Custom tokenizer for text processing
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -36,10 +38,13 @@ public class PairsPMI extends Configured implements Tool {  // Provides standard
     // Contract to implement required methods
 
     private static final Logger LOG = Logger.getLogger(PairsPMI.class);
+    // static: Class-level variable - shared across all instances
+    // final: Cannot be reassigned after initialization - final prevents reassignment
+    // Logger: Type of variable
+    // LOG: Variable name (convention: uppercase for constants)
 
     // Configured: Base class for Hadoop tools
     // Tool: Interface for running MapReduce jobs
-
     // First Job: Count occurrences
     public static class LineCountMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
         private static final IntWritable ONE = new IntWritable(1);
