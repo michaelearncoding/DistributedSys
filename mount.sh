@@ -1,3 +1,7 @@
+docker start hadoop-pseudo
+docker exec -it hadoop-pseudo /bin/bash
+cd /mnt/helloHaddop/
+
 cd /mnt/helloHaddop/src/main/java/ca/uwaterloo/cs651/a0
 
 cd /mnt/helloHaddop/

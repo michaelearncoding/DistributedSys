@@ -4,6 +4,10 @@ import org.apache.spark.SparkContext  // Core Spark functionality
 import org.apache.spark.SparkConf // Spark configuration
 import org.rogach.scallop._ // Command line argument parsing
 import scala.collection.mutable.HashMap // Mutable hash map collection
+// import io.bespin.scala.util.Tokenizer  // Added missing import
+import io.bespin.java.util.Tokenizer
+import scala.collection.JavaConverters._ // Add Java to Scala conversion
+
 
 // Main required options
 class Conf(args: Seq[String]) extends ScallopConf(args) {
@@ -28,9 +32,10 @@ object PairsPMI { // Singleton object
 
 // Each worker processes its partition
     val tokenized = lines.map(line => {  // Transform each line into tokens
-      val tokens = Tokenizer.tokenize(line) 
+    //   val tokens = Tokenizer.tokenize(line) 
+      val tokens = Tokenizer.tokenize(line).asScala.toSeq // Tokenize line
       tokens.take(40) // Take first 40 tokens only
-    })
+    }).cache()  // Cache RDD since we use it twice
 
     // Count total lines
     val totalLines = tokenized.count() // Count total number of lines
@@ -44,7 +49,8 @@ object PairsPMI { // Singleton object
 
     // Count individual words
     // Aggregation requires shuffle
-    val wordCounts = tokenized
+    // Fix here with the type annotation for wordCounts
+    val wordCounts: scala.collection.Map[String, Int] = tokenized
       .flatMap(tokens => tokens.distinct) // Get unique tokens from each line // Local to each worker
       .map(word => (word, 1)) // Create word-count pairs // Local to each worker
       .reduceByKey(_ + _) // Sum counts for each word // Requires network shuffle
@@ -66,7 +72,8 @@ object PairsPMI { // Singleton object
 
     // Second pass - generate and count pairs, calculate PMI
     val pmi = tokenized
-      .flatMap(e => { // Generate word pairs
+      .flatMap(tokens => { // Generate word pairsa
+        // Fixed tokens reference
         for {
           i <- tokens.indices
           j <- (i + 1) until tokens.length
@@ -76,7 +83,8 @@ object PairsPMI { // Singleton object
       })
       .reduceByKey(_ + _) // Sum pair occurrences
       .filter(_._2 >= conf.threshold())  // Filter by threshold
-      .map { case ((word1, word2), count) =>
+    //   .map { case ((word1, word2), count) =>
+      .map { case ((word1: String, word2: String), count: Int) =>  // Added type annotations
         val pxy = count.toDouble / totalLines
         val px = broadcastCounts.value(word1).toDouble / totalLines // P(x)
         val py = broadcastCounts.value(word2).toDouble / totalLines // P(y)
