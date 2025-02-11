@@ -112,6 +112,20 @@ Only output if count > 1.
 
 ## Analysis FOR PMI implementation in Scala
 
+Execution Flow:
+
+graph TD
+    A[Input Data] --> B[Partitions]
+    B --> C[Worker 1]
+    B --> D[Worker 2]
+    B --> E[Worker N]
+    C --> F[Map Operation]
+    D --> G[Map Operation]
+    E --> H[Map Operation]
+    F --> I[Reduce/Aggregate]
+    G --> I
+    H --> I
+
 the PMI (Pointwise Mutual Information) calculation implementation in Hadoop MapReduce and plan a Spark port.
 
 Cannot do in single job because:

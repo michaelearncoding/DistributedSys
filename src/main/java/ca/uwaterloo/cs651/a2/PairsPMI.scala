@@ -24,6 +24,9 @@ object PairsPMI { // Singleton object
     // First pass - count lines and words
     // First Pass - Data Processing
     val lines = sc.textFile(conf.input())  // Read input file
+    //// RDD partitioned by default
+
+// Each worker processes its partition
     val tokenized = lines.map(line => {  // Transform each line into tokens
       val tokens = Tokenizer.tokenize(line) 
       tokens.take(40) // Take first 40 tokens only
@@ -40,10 +43,11 @@ object PairsPMI { // Singleton object
 // collectAsMap: Action to create local map
 
     // Count individual words
+    // Aggregation requires shuffle
     val wordCounts = tokenized
-      .flatMap(tokens => tokens.distinct) // Get unique tokens from each line
-      .map(word => (word, 1)) // Create word-count pairs
-      .reduceByKey(_ + _) // Sum counts for each word
+      .flatMap(tokens => tokens.distinct) // Get unique tokens from each line // Local to each worker
+      .map(word => (word, 1)) // Create word-count pairs // Local to each worker
+      .reduceByKey(_ + _) // Sum counts for each word // Requires network shuffle
       .filter(_._2 >= conf.threshold()) // Filter by minimum threshold
       .collectAsMap() // Convert to local map
 
