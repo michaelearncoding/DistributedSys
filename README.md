@@ -110,3 +110,8 @@ Reduce Phase:
 Only output if count > 1.
 
 
+## Analysis FOR PMI implementation in Scala
+
+the PMI (Pointwise Mutual Information) calculation implementation in Hadoop MapReduce and plan a Spark port.
+
+
