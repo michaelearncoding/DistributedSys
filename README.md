@@ -135,6 +135,12 @@ MapReduce paradigm doesn't allow sharing state between mappers/reducers
 Results from first job must be complete before second job starts
 
 
+graph TD
+    A[RDD Distributed across Workers] 
+    --> B[collectAsMap]
+    --> C[Single Map in Driver Memory]
+    --> D[Broadcast to All Workers]
+
 Job 1 (Line & Word Counting):
 
 ```text

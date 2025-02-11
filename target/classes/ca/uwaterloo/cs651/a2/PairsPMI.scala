@@ -49,12 +49,20 @@ object PairsPMI { // Singleton object
       .map(word => (word, 1)) // Create word-count pairs // Local to each worker
       .reduceByKey(_ + _) // Sum counts for each word // Requires network shuffle
       .filter(_._2 >= conf.threshold()) // Filter by minimum threshold
-      .collectAsMap() // Convert to local map
+      .collectAsMap() // Convert to local map 
+    //   graph TD
+    //   A[RDD Distributed across Workers] 
+    //   --> B[collectAsMap]
+    //   --> C[Single Map in Driver Memory]
+    //   --> D[Broadcast to All Workers]      
 
     // Broadcast word counts
      // Broadcast word counts to workers
-    val broadcastCounts = sc.broadcast(wordCounts)
+    val broadcastCounts = sc.broadcast(wordCounts)// Collects to driver node's memory
      // Broadcast word counts to workers
+     // Broadcast from driver
+     //Driver coordinates distribution to workers
+//Single source of truth for broadcast
 
     // Second pass - generate and count pairs, calculate PMI
     val pmi = tokenized
