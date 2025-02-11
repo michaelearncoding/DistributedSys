@@ -10,32 +10,50 @@ import scala.collection.JavaConverters._ // Add Java to Scala conversion
 
 
 // Main required options
-class Conf(args: Seq[String]) extends ScallopConf(args) {
-// Define command line arguments configuration
-  mainOptions = Seq(input, output, reducers) // Main required options
-  val input = opt[String](required = true) // Input path parameter
-  val output = opt[String](required = true)// Output path parameter
-  val reducers = opt[Int](required = true)  // Number of reducer
-  val threshold = opt[Int](default = Some(10)) // Minimum occurrence threshold
-  verify() // Verify configuration
-}
+// Serializable configuration case class
+case class PMIConfig(
+                      inputPath: String,
+                      outputPath: String,
+                      numReducers: Int,
+                      threshold: Int
+                    )
 
-object PairsPMI { // Singleton object
-  def main(args: Array[String]): Unit = {
-    val conf = new Conf(args)  // Parse command line arguments
-    val sc = new SparkContext(new SparkConf().setAppName("PairsPMI"))  // Create Spark context
+// Command line argument parsing
+class Conf(args: Array[String]) extends ScallopConf(args) {
+    mainOptions = Seq(input, output, reducers)
+    val input = opt[String](required = true)
+    val output = opt[String](required = true)
+    val reducers = opt[Int](required = true)
+    val threshold = opt[Int](default = Some(10))
+    verify()
+  }
+
+  object PairsPMI {
+    def main(args: Array[String]): Unit = {
+      // Parse arguments and create configs
+      val scallop = new Conf(args)
+      val config = PMIConfig(
+        scallop.input(),
+        scallop.output(),
+        scallop.reducers(),
+        scallop.threshold()
+      )
+
+      val sc = new SparkContext(new SparkConf().setAppName("PairsPMI"))  // Create Spark context
 
     // First pass - count lines and words
     // First Pass - Data Processing
     val lines = sc.textFile(conf.input())  // Read input file
     //// RDD partitioned by default
 
-// Each worker processes its partition
-    val tokenized = lines.map(line => {  // Transform each line into tokens
-    //   val tokens = Tokenizer.tokenize(line) 
-      val tokens = Tokenizer.tokenize(line).asScala.toSeq // Tokenize line
-      tokens.take(40) // Take first 40 tokens only
-    }).cache()  // Cache RDD since we use it twice
+    // Each worker processes its partition
+    try {
+        // First pass - process input and count lines
+        val lines = sc.textFile(config.inputPath)
+        val tokenized = lines.map(line => {
+        val tokens = Tokenizer.tokenize(line).asScala.toSeq
+        tokens.take(40)
+        }).cache()
 
     // Count total lines
     val totalLines = tokenized.count() // Count total number of lines
@@ -54,7 +72,7 @@ object PairsPMI { // Singleton object
       .flatMap(tokens => tokens.distinct) // Get unique tokens from each line // Local to each worker
       .map(word => (word, 1)) // Create word-count pairs // Local to each worker
       .reduceByKey(_ + _) // Sum counts for each word // Requires network shuffle
-      .filter(_._2 >= conf.threshold()) // Filter by minimum threshold
+      .filter(_._2 >= conf.threshold) // Filter by minimum threshold
       .collectAsMap() // Convert to local map 
     //   graph TD
     //   A[RDD Distributed across Workers] 
@@ -82,19 +100,21 @@ object PairsPMI { // Singleton object
         } yield ((tokens(i), tokens(j)), 1) // Emit pair with count 1
       })
       .reduceByKey(_ + _) // Sum pair occurrences
-      .filter(_._2 >= conf.threshold())  // Filter by threshold
-    //   .map { case ((word1, word2), count) =>
-      .map { case ((word1: String, word2: String), count: Int) =>  // Added type annotations
+      .filter(_._2 >= config.threshold)
+      .map { case ((word1, word2), count) =>
         val pxy = count.toDouble / totalLines
-        val px = broadcastCounts.value(word1).toDouble / totalLines // P(x)
-        val py = broadcastCounts.value(word2).toDouble / totalLines // P(y)
-        ((word1, word2), math.log10(pxy / (px * py))) // PMI formula
+        val px = broadcastCounts.value(word1).toDouble / totalLines
+        val py = broadcastCounts.value(word2).toDouble / totalLines
+        ((word1, word2), (math.log10(pxy / (px * py)), count))
       }
+      .coalesce(config.numReducers)
 
 //This is the first of two passes needed for PMI calculation, gathering global statistics (word counts and total lines).
 
-    // Save results
-    pmi.saveAsTextFile(conf.output())
-    sc.stop()
+      // Save output
+      pmi.saveAsTextFile(config.outputPath)
+    } finally {
+      sc.stop()
+    }
   }
 }

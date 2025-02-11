@@ -68,7 +68,142 @@ hdfs dfs -cat /user/hadoop/px/part-r-00000
 
 # Yarn resource manager cmd
 
+# Verify services
+jps | grep -E "ResourceManager|NodeManager"
+
 # 1. Kill hanging applications
 yarn application -kill application_1739310151077_0001
 yarn application -kill application_1739310151077_0002
+
+
+# Kill unnecessary Spark applications
+for pid in 1994 1450 1618 4309 3228; do
+  kill -9 $pid
+done
+
+# Verify core services
+required_services="NameNode DataNode SecondaryNameNode NodeManager Master Worker"
+jps | grep -E "$(echo $required_services | tr ' ' '|')"
+
+# Restart YARN NodeManager if needed
+$HADOOP_HOME/sbin/yarn-daemon.sh stop nodemanager
+$HADOOP_HOME/sbin/yarn-daemon.sh start nodemanager
+
+
+
+# The warning shows we're using a deprecated script. Let's use the newer commands.
+yarn --daemon stop resourcemanager
+yarn --daemon stop nodemanager
+
+# 2. Start with new commands
+yarn --daemon start resourcemanager
+yarn --daemon start nodemanager
+
+# 3. Clean up any stale PID files
+rm -f $HADOOP_HOME/logs/*.pid
+
+# 1. Kill ApplicationCLI process
+kill -9 4659
+
+
+# 2. Check for ResourceManager/NodeManager processes not shown in ps
+kill -9 $(pgrep -f "resourcemanager|nodemanager")
+
+# 3. Clean up logs and PID files
+rm -f ${HADOOP_HOME}/logs/yarn-*-*.pid
+rm -f ${HADOOP_HOME}/logs/yarn-*-*.out
+
+
+
+
+# 1. Kill any existing YARN processes
+pkill -f resourcemanager
+pkill -f nodemanager
+
+
+
+##### Final fix for the resource manager error: 
+
+# 1. Create capacity-scheduler.xml
+cat > $HADOOP_HOME/etc/hadoop/capacity-scheduler.xml << EOF
+<configuration>
+  <property>
+    <name>yarn.scheduler.capacity.root.queues</name>
+    <value>default</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.capacity.root.default.capacity</name>
+    <value>100</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.capacity.root.default.state</name>
+    <value>RUNNING</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.capacity.root.default.minimum-user-limit-percent</name>
+    <value>100</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.capacity.resource-calculator</name>
+    <value>org.apache.hadoop.yarn.util.resource.DominantResourceCalculator</value>
+  </property>
+</configuration>
+EOF
+
+# 2. Start ResourceManager
+$HADOOP_HOME/bin/yarn resourcemanager
+
+# 1. Check ResourceManager status
+jps | grep ResourceManager
+
+# 2. Check node status
+yarn node -list
+
+# 3. Submit Spark job with working ResourceManager
+spark-submit \
+  --class ca.uwaterloo.cs651.a2.PairsPMI \
+  --master yarn \
+  --deploy-mode client \
+  --driver-memory 512m \
+  --executor-memory 1g \
+  --executor-cores 1 \
+  --num-executors 1 \
+  --conf spark.yarn.am.memory=512m \
+  /mnt/helloHaddop/target/assignments-1.0.jar \
+  --input /user/hadoop/data/Shakespeare.txt \
+  --output /user/hadoop/output/shakespeare-pmi-scala \
+  --reducers 1 \
+  --threshold 10
+
+
+
+# 3. Restart YARN services properly
+$HADOOP_HOME/bin/yarn --daemon stop resourcemanager
+$HADOOP_HOME/bin/yarn --daemon stop nodemanager
+$HADOOP_HOME/bin/yarn --daemon start resourcemanager
+$HADOOP_HOME/bin/yarn --daemon start nodemanager
+
+
+# Submit Spark job with adjusted resources
+cd /mnt/helloHaddop
+
+spark-submit \
+  --class ca.uwaterloo.cs651.a2.PairsPMI \
+  --master yarn \
+  --deploy-mode client \
+  --driver-memory 512m \
+  --executor-memory 1g \
+  --executor-cores 1 \
+  --num-executors 1 \
+  --conf spark.yarn.am.memory=896m \
+  target/assignments-1.0.jar \
+  --input /user/hadoop/data/Shakespeare.txt \
+  --output /user/hadoop/output/shakespeare-pmi-scala \
+  --reducers 1 \
+  --threshold 10
+
+# Check output
+hdfs dfs -ls /user/hadoop/output/shakespeare-pmi-scala
+hdfs dfs -cat /user/hadoop/output/shakespeare-pmi-scala/part-* | head -n 10
+
 
