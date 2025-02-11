@@ -65,3 +65,10 @@ hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs651.a0.PerfectX data/wiki_s
 
 hdfs dfs -cat /user/hadoop/px/part-r-00000
 
+
+# Yarn resource manager cmd
+
+# 1. Kill hanging applications
+yarn application -kill application_1739310151077_0001
+yarn application -kill application_1739310151077_0002
+
