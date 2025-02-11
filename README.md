@@ -114,16 +114,21 @@ Only output if count > 1.
 
 the PMI (Pointwise Mutual Information) calculation implementation in Hadoop MapReduce and plan a Spark port.
 
-(1)Data Loading & Initial Processing:
-Reads text file as RDD
-Tokenizes each line
-Limits to first 40 tokens (optimization)
+```text
+PMI(x,y) = log( p(x,y) / (p(x) * p(y)) )
+where:
+- p(x,y) = cooccurrence_count / N
+- p(x) = word_count(x) / N
+- p(y) = word_count(y) / N
+```
 
+```text
+Map: 
+  input: text line
+  emit: ("*", 1) for total lines
+        (word, 1) for each unique word
 
-
-(2)Line Counting: 
-Action that triggers computation
-Needed for PMI denominator
-
-
-
+Reduce:
+  input: (word, [1,1,1...])
+  emit: (word, count)
+```
