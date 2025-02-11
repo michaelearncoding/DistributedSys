@@ -32,6 +32,13 @@ object PairsPMI { // Singleton object
     // Count total lines
     val totalLines = tokenized.count() // Count total number of lines
 
+//Key Transformations:
+
+// flatMap: One-to-many transformation
+// distinct: Remove duplicates
+// reduceByKey: Aggregate by key
+// collectAsMap: Action to create local map
+
     // Count individual words
     val wordCounts = tokenized
       .flatMap(tokens => tokens.distinct) // Get unique tokens from each line
@@ -43,6 +50,7 @@ object PairsPMI { // Singleton object
     // Broadcast word counts
      // Broadcast word counts to workers
     val broadcastCounts = sc.broadcast(wordCounts)
+     // Broadcast word counts to workers
 
     // Second pass - generate and count pairs, calculate PMI
     val pmi = tokenized
@@ -62,6 +70,8 @@ object PairsPMI { // Singleton object
         val py = broadcastCounts.value(word2).toDouble / totalLines // P(y)
         ((word1, word2), math.log10(pxy / (px * py))) // PMI formula
       }
+
+//This is the first of two passes needed for PMI calculation, gathering global statistics (word counts and total lines).
 
     // Save results
     pmi.saveAsTextFile(conf.output())
