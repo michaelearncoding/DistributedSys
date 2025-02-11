@@ -114,6 +114,15 @@ Only output if count > 1.
 
 the PMI (Pointwise Mutual Information) calculation implementation in Hadoop MapReduce and plan a Spark port.
 
+Cannot do in single job because:
+
+Need total word counts before calculating PMI
+MapReduce paradigm doesn't allow sharing state between mappers/reducers
+Results from first job must be complete before second job starts
+
+
+Job 1 (Line & Word Counting):
+
 ```text
 PMI(x,y) = log( p(x,y) / (p(x) * p(y)) )
 where:
@@ -131,4 +140,19 @@ Map:
 Reduce:
   input: (word, [1,1,1...])
   emit: (word, count)
+```
+
+Job 2 (PMI Calculation):
+
+```text
+
+Map:
+  input: text line
+  emit: (word_pair, 1)
+
+Reduce:
+  input: (word_pair, [1,1,1...])
+  uses: cached word counts from Job 1
+  emit: (word_pair, PMI_value)
+
 ```
