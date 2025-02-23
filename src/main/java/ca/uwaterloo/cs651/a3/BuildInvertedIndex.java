@@ -51,7 +51,27 @@
  
  public class BuildInvertedIndex extends Configured implements Tool {
    private static final Logger LOG = Logger.getLogger(BuildInvertedIndex.class);
+   // 1. 工具类
+// private static final Logger LOG = Logger.getLogger();
+
+
+// 2. 计数器/统计
+// private static int totalUsers = 0;
+
+    // // 静态成员：可以直接通过类访问
+    // Math.PI              // 不需要创建实例
+    // Logger.getLogger()   // 静态方法调用
+
+    // 非静态成员：必须通过实例访问
+    // Counter c = new Counter();
+    // c.instanceCount      // 需要实例
  
+// 3. 共享资源
+// private static final DatabaseConnection DB;
+
+// 4. 常量
+// public static final double PI = 3.14159;
+
    private static final class MyMapper extends Mapper<LongWritable, Text, Text, PairOfInts> {
      private static final Text WORD = new Text();
      private static final Object2IntFrequencyDistribution<String> COUNTS =
