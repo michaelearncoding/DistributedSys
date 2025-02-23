@@ -58,6 +58,11 @@ cd /mnt/helloHaddop/
 hadoop jar target/assignments-1.0.jar ca.uwaterloo.cs651.a0.WordCount -input data/Shakespeare.txt -output wc
 ```
 
+## NoSQL Environment Setup
+Access : http://localhost:7474/browser/
+Crash Course: https://www.youtube.com/watch?v=8jNPelugC2s
+
+
 ## Go Environment Setup
 ### 1. Create Go Workspace
 ```bash
