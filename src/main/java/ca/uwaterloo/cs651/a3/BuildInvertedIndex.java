@@ -49,7 +49,9 @@
  import java.util.Iterator;
  import java.util.List;
  
+ // 1. 类的定义
  public class BuildInvertedIndex extends Configured implements Tool {
+  // 用于记录日志的对象
    private static final Logger LOG = Logger.getLogger(BuildInvertedIndex.class);
    // 1. 工具类
 // private static final Logger LOG = Logger.getLogger();
@@ -72,11 +74,21 @@
 // 4. 常量
 // public static final double PI = 3.14159;
 
+// 2. Mapper类 - 处理输入文档并生成词-文档对
    private static final class MyMapper extends Mapper<LongWritable, Text, Text, PairOfInts> {
+     // WORD用于存储分词结果
      private static final Text WORD = new Text();
+     // COUNTS用于统计每个词在文档中出现的次数
      private static final Object2IntFrequencyDistribution<String> COUNTS =
          new Object2IntFrequencyDistributionEntry<>();
- 
+
+//Mapper的核心工作流程:
+
+// 接收文档内容
+// 对文档进行分词
+// 统计每个词的出现次数
+// 输出 <词, (文档ID,出现次数)> 的键值对         
+
      @Override
      public void map(LongWritable docno, Text doc, Context context)
          throws IOException, InterruptedException {
@@ -95,7 +107,59 @@
        }
      }
    }
- 
+
+// 数据结构的类别
+
+/*
+书 = 文档集合
+单词 = 索引项
+页码 = 文档ID
+出现次数 = 该单词在文档中出现多少次
+
+
+输入：
+文档1: "the cat sat"
+文档2: "the cat ran"
+文档3: "the dog ran"
+
+*/ 
+
+
+//Reducer的核心工作流程:
+
+// 接收相同词的所有文档信息
+// 将文档信息整理成列表
+// 计算在多少文档中出现(df值)
+// 输出 <词, (文档频率,文档列表)>
+
+   // 3. Reducer类 - 合并相同词的文档列表
+
+   /*
+   输入到reduce函数:
+key = "cat"
+values = [(文档1,1), (文档2,1)]
+
+处理过程:
+- 创建空列表 postings = []
+- 遍历values, 添加到postings
+- 计算df (df=2, 因为"cat"出现在2个文档中)
+- 排序postings
+- 输出结果
+
+最终输出形式：
+
+
+cat -> (df=2, [(文档1,1), (文档2,1)])
+dog -> (df=1, [(文档3,1)])
+the -> (df=3, [(文档1,1), (文档2,1), (文档3,1)])
+
+核心思想就是：
+
+把相同单词在不同文档中的出现情况整理在一起
+记录这个单词总共出现在多少个文档中(df值)
+把所有信息按文档ID排序后存储
+   */
+
    private static final class MyReducer extends
        Reducer<Text, PairOfInts, Text, PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>> {
      private static final IntWritable DF = new IntWritable();
@@ -185,7 +249,10 @@
     * @param args command-line arguments
     * @throws Exception if tool encounters an exception
     */
+  
+    // 4. 程序入口
    public static void main(String[] args) throws Exception {
+     // 启动MapReduce作业
      ToolRunner.run(new BuildInvertedIndex(), args);
    }
  }
