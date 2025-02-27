@@ -242,12 +242,10 @@ the -> (df=3, [(文档1,1), (文档2,1), (文档3,1)])
 
         // Helper class for merge process
         private static class MergeEntry {
-          final int index;
           PairOfInts current;
           final Iterator<PairOfInts> iterator;
           
           MergeEntry(int index, PairOfInts current, Iterator<PairOfInts> iterator) {
-              this.index = index;
               this.current = current;
               this.iterator = iterator;
           }
