@@ -29,6 +29,77 @@ Ensure consistent partitioning for search
 
 ```
 
+## Compression Implementation
+
+
+### Benefits
+Smaller numbers = fewer bytes
+
+Sequential IDs compress well
+
+Significant space savings
+
+Maintains sortability
+
+### This compression helps reduce:
+
+Storage space
+
+Memory usage
+
+Network transfer
+
+### Example: 
+
+Original document IDs: [5, 8, 12, 15]
+
+```text
+
+Original document IDs: [5, 8, 12, 15]
+
+1. VInt Compression:
+- Small numbers use fewer bytes
+- 5 -> [5]
+- 128 -> [128, 1]
+
+2. Gap Compression:
+
+Original: [5, 8, 12, 15]
+
+Gaps:    [5, 3,  4,  3]
+         ↑  ↑   ↑   ↑
+         5  8-5 12-8 15-12
+
+Final Compressed: [5, 3, 4, 3]
+
+```
+
+
+
+
+```java
+private static class IndexCompressor {
+    public static void writeVInt(DataOutput out, int value) throws IOException {
+        WritableUtils.writeVInt(out, value);
+    }
+    
+    public static void writeGappedDocIds(DataOutput out, List<Integer> docIds) throws IOException {
+        int prev = 0;
+        for (int docId : docIds) {
+            writeVInt(out, docId - prev); // Gap compression
+            prev = docId;
+        }
+    }
+}
+
+
+
+
+```
+
+
+
+
 
 ## Term Partitioning
 

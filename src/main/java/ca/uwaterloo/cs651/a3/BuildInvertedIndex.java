@@ -354,14 +354,30 @@ the -> (df=3, [(文档1,1), (文档2,1), (文档3,1)])
 
     // Helper class for compression
   private static class IndexCompressor {
+        // Method 1: VInt (Variable-length Integer) Compression
+        // 只在当前类内部可见
+        // 不需要创建实例就能使用
+        // 定义一个类
+        // 类名，表示这是一个压缩器
+
+
+
+        //公开访问
+        // 静态方法，可直接调用
+        // 无返回值
+        // 输出流参数
+        // 要压缩的整数
+        // 可能抛出IO异常 -> throws IOException
         public static void writeVInt(DataOutput out, int value) throws IOException {
             WritableUtils.writeVInt(out, value);
         }
         
+        // Method 2: Gap (Delta) Compression
         public static void writeGappedDocIds(DataOutput out, List<Integer> docIds) throws IOException {
             int prev = 0;
             for (int docId : docIds) {
                 writeVInt(out, docId - prev); // Store gaps instead of absolute values
+                // // 存储差值而不是实际值
                 prev = docId;
             }
         }
