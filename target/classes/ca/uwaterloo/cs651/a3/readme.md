@@ -51,6 +51,25 @@ With 3 reducers:
 "dog" -> hashCode % 3 = 2 -> Reducer 2
 
 "the" -> hashCode % 3 = 0 -> Reducer 0
+
+
+
+
+输入：
+key = "cat"
+value = <1,3>  // 文档1中出现3次
+numPartitions = 4
+
+处理过程：
+1. key.toString() = "cat"
+2. "cat".hashCode() = 123456
+3. 123456 & Integer.MAX_VALUE = 123456  // 确保正数
+4. 123456 % 4 = 0  // 确定发送到哪个reducer
+
+输出：
+0  // 表示这个词会被发送到Reducer 0处理
+
+
 ```
 ### Benefits:
 Parallel processing
@@ -68,6 +87,7 @@ job.setPartitionerClass(TermPartitioner.class);
 
 
 ### Guarantees:
+
 Same term always goes to same reducer
 
 All postings for a term processed together

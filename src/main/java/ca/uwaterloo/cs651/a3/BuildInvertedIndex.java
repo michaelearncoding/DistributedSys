@@ -328,9 +328,22 @@ the -> (df=3, [(文档1,1), (文档2,1), (文档3,1)])
     }
     
     // Custom Partitioner for term distribution
+    // 定义一个公共的静态类
+    // 继承自Hadoop的Partitioner类
+    // <Text, PairOfInts>: 泛型参数，指定key和value的类型
+    /*
+     * 
+     * 输入参数:
+        key: 词语（如 "cat"）
+        value: 文档ID和频率对（如 <1,3> 表示文档1出现3次）
+        numPartitions: reducer数量（如 4）
+     */
     public static class TermPartitioner extends Partitioner<Text, PairOfInts> {
+        // 方法重写,注解，表示重写父类方法
         @Override
         public int getPartition(Text key, PairOfInts value, int numPartitions) {
+            // 计算分区
+            // 将词语转为字符串 -> 计算哈希值 -> 位运算，确保结果为正数 -> 取模运算，确保结果在[0, numPartitions-1]范围内
             return (key.toString().hashCode() & Integer.MAX_VALUE) % numPartitions;
         }
     }
