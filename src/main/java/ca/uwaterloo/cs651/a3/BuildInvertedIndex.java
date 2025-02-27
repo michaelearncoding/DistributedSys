@@ -16,7 +16,7 @@
 
 //  package io.bespin.java.mapreduce.search;
  package ca.uwaterloo.cs651.a3; // Package declaration
-
+ import org.apache.hadoop.mapreduce.Partitioner;
  import io.bespin.java.util.Tokenizer;
  import org.apache.hadoop.conf.Configured;
  import org.apache.hadoop.fs.FileSystem;
@@ -24,7 +24,8 @@
  import org.apache.hadoop.io.IntWritable;
  import org.apache.hadoop.io.LongWritable;
  import org.apache.hadoop.io.Text;
- import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.mapreduce.Job;
  import org.apache.hadoop.mapreduce.Mapper;
  import org.apache.hadoop.mapreduce.Reducer;
  import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -43,11 +44,26 @@
  import tl.lin.data.pair.PairOfInts;
  import tl.lin.data.pair.PairOfObjectInt;
  import tl.lin.data.pair.PairOfWritables;
- 
- import java.io.IOException;
- import java.util.Collections;
- import java.util.Iterator;
- import java.util.List;
+
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+import java.util.PriorityQueue;
+import java.io.File;
+
+import java.io.DataOutputStream;
+import java.io.ByteArrayOutputStream;
+
+
+
  
  // 1. 类的定义
  public class BuildInvertedIndex extends Configured implements Tool {
@@ -160,33 +176,191 @@ the -> (df=3, [(文档1,1), (文档2,1), (文档3,1)])
 把所有信息按文档ID排序后存储
    */
 
+   // Modified Reducer with buffering
    private static final class MyReducer extends
        Reducer<Text, PairOfInts, Text, PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>> {
-     private static final IntWritable DF = new IntWritable();
+        private static final int BUFFER_SIZE = 100000; // Adjust based on memory constraints
+        private List<PairOfInts> buffer;
+        private File tempFile;
+        private int spillCount = 0;
+        private Context context; // Add this field
+//here
+        // Add inside MyReducer class:
+
+        private void mergeSpills() throws IOException {
+          List<ObjectInputStream> streams = new ArrayList<>();
+          PriorityQueue<MergeEntry> queue = new PriorityQueue<>((a, b) -> a.current.compareTo(b.current));
+          
+          try {
+              // Open all spill files and initialize queue
+              for (int i = 0; i < spillCount; i++) {
+                  File spillFile = new File("spill_" + context.getTaskAttemptID() + "_" + i);
+                  ObjectInputStream in = new ObjectInputStream(new FileInputStream(spillFile));
+                  streams.add(in);
+                  
+                  @SuppressWarnings("unchecked")
+                  List<PairOfInts> spilledData = (List<PairOfInts>) in.readObject();
+                  if (!spilledData.isEmpty()) {
+                      Iterator<PairOfInts> iterator = spilledData.iterator();
+                      queue.add(new MergeEntry(i, iterator.next(), iterator));
+                  }
+              }
+              
+              // Perform k-way merge
+              buffer.clear();
+              while (!queue.isEmpty()) {
+                  MergeEntry entry = queue.poll();
+                  buffer.add(entry.current);
+                  
+                  if (entry.iterator.hasNext()) {
+                      entry.current = entry.iterator.next();
+                      queue.add(entry);
+                  }
+              }
+              
+          } catch (ClassNotFoundException e) {
+              throw new IOException("Error reading spill files", e);
+          } finally {
+              // Close all streams
+              for (ObjectInputStream stream : streams) {
+                  try {
+                      stream.close();
+                  } catch (IOException e) {
+                      // Log error but continue closing others
+                      LOG.error("Error closing spill file", e);
+                  }
+              }
+              
+              // Delete spill files
+              for (int i = 0; i < spillCount; i++) {
+                  new File("spill_" + context.getTaskAttemptID() + "_" + i).delete();
+              }
+              
+              spillCount = 0;
+          }
+        }
+
+        // Helper class for merge process
+        private static class MergeEntry {
+          final int index;
+          PairOfInts current;
+          final Iterator<PairOfInts> iterator;
+          
+          MergeEntry(int index, PairOfInts current, Iterator<PairOfInts> iterator) {
+              this.index = index;
+              this.current = current;
+              this.iterator = iterator;
+          }
+        }
+        
+
+
+
+        @Override
+        protected void setup(Context context) {
+            this.context = context; // Store context
+            buffer = new ArrayList<>();
+            tempFile = new File("spill_" + context.getTaskAttemptID());
+        }
+
+        private void spillBuffer() throws IOException {
+            Collections.sort(buffer);
+            // Write buffer to temp file
+            try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(tempFile))) {
+                out.writeObject(buffer);
+            }
+            buffer.clear();
+            spillCount++;
+        }
+        
+        @Override
+        public void reduce(Text key, Iterable<PairOfInts> values, Context context) 
+                throws IOException, InterruptedException {
+            for (PairOfInts value : values) {
+                buffer.add(value.clone());
+                if (buffer.size() >= BUFFER_SIZE) {
+                    spillBuffer();
+                }
+            }
+            
+            // Merge all spilled runs
+            if (spillCount > 0) {
+                mergeSpills();
+            }
+            
+            // Compress and write final output
+            writeCompressedPostings(key, buffer, context);
+        }
+        
+
+        private void writeCompressedPostings(Text key, List<PairOfInts> postings, Context context) 
+                throws IOException, InterruptedException {
+            // Sort postings by document ID
+            Collections.sort(postings);
+            
+            // Create compressed output
+            ArrayListWritable<PairOfInts> compressed = new ArrayListWritable<>();
+            
+            // Extract doc IDs and frequencies
+            List<Integer> docIds = new ArrayList<>();
+            List<Integer> frequencies = new ArrayList<>();
+            for (PairOfInts posting : postings) {
+                docIds.add(posting.getLeftElement());
+                frequencies.add(posting.getRightElement());
+            }
+            
+            // Use IndexCompressor to compress doc IDs with gap encoding
+            DataOutput tempOutput = new DataOutputStream(new ByteArrayOutputStream());
+            IndexCompressor.writeGappedDocIds(tempOutput, docIds);
+            
+            // Write frequencies using VInt compression
+            for (int freq : frequencies) {
+                IndexCompressor.writeVInt(tempOutput, freq);
+            }
+            
+            // Write final output
+            context.write(key, new PairOfWritables<>(
+                new IntWritable(postings.size()),
+                compressed
+            ));
+        }
+
+
+
+    }
+    
+    // Custom Partitioner for term distribution
+    public static class TermPartitioner extends Partitioner<Text, PairOfInts> {
+        @Override
+        public int getPartition(Text key, PairOfInts value, int numPartitions) {
+            return (key.toString().hashCode() & Integer.MAX_VALUE) % numPartitions;
+        }
+    }
  
-     @Override
-     public void reduce(Text key, Iterable<PairOfInts> values, Context context)
-         throws IOException, InterruptedException {
-       Iterator<PairOfInts> iter = values.iterator();
-       ArrayListWritable<PairOfInts> postings = new ArrayListWritable<>();
- 
-       int df = 0;
-       while (iter.hasNext()) {
-         postings.add(iter.next().clone());
-         df++;
-       }
- 
-       // Sort the postings by docno ascending.
-       Collections.sort(postings);
- 
-       DF.set(df);
-       context.write(key, new PairOfWritables<>(DF, postings));
-     }
-   }
+
  
    private BuildInvertedIndex() {}
- 
+
+    // Helper class for compression
+  private static class IndexCompressor {
+        public static void writeVInt(DataOutput out, int value) throws IOException {
+            WritableUtils.writeVInt(out, value);
+        }
+        
+        public static void writeGappedDocIds(DataOutput out, List<Integer> docIds) throws IOException {
+            int prev = 0;
+            for (int docId : docIds) {
+                writeVInt(out, docId - prev); // Store gaps instead of absolute values
+                prev = docId;
+            }
+        }
+    }       
+
    private static final class Args {
+    // @Option 是一个注解，用于标记命令行参数的配置：
+    @Option(name = "-numReducers", metaVar = "[num]", required = false, usage = "number of reducers")
+    int numReducers = 1;
+
      @Option(name = "-input", metaVar = "[path]", required = true, usage = "input path")
      String input;
  
@@ -194,6 +368,8 @@ the -> (df=3, [(文档1,1), (文档2,1), (文档3,1)])
      String output;
    }
  
+    // Custom Partitioner for term distribution
+
    /**
     * Runs this tool.
     */
@@ -231,6 +407,10 @@ the -> (df=3, [(文档1,1), (文档2,1), (文档3,1)])
  
      job.setMapperClass(MyMapper.class);
      job.setReducerClass(MyReducer.class);
+
+    // Set number of reducers from args
+    job.setNumReduceTasks(args.numReducers);
+    job.setPartitionerClass(TermPartitioner.class);    
  
      // Delete the output directory if it exists already.
      Path outputDir = new Path(args.output);
