@@ -1,48 +1,51 @@
-# docker-compose.yml
-version: '3.8'
+version: '3.9'
 
 services:
-  neo4j:
-    image: neo4j:5.13.0
-    container_name: neo4j-db
-    volumes:
-      - neo4j_logs:/logs
-      - neo4j_config:/config
-      - neo4j_data:/data
-      - neo4j_plugins:/plugins
-    environment:
-      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-ThisIsThePassword}
-      - NEO4J_dbms_memory_pagecache_size=1G
-      - NEO4J_dbms_memory_heap_initial__size=1G
-      - NEO4J_dbms_memory_heap_max__size=1G
-      - NEO4J_apoc_export_file_enabled=true
-      - NEO4J_apoc_import_file_enabled=true
-      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
-      - NEO4J_server_memory_pagecache_size=1G
-      - NEO4J_server_memory_heap_initial__size=1G
-      - NEO4J_server_memory_heap_max__size=1G
+  redis:
+    image: redis:latest
+    container_name: redis_container
     ports:
-      - "7474:7474"  # HTTP
-      - "7687:7687"  # Bolt
-    restart: always
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - neo4j_network
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo_container
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra_container
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=TestCluster
+
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j_container
+    ports:
+      - "7474:7474"  # Web interface
+      - "7687:7687"  # Bolt protocol for queries
+    environment:
+      NEO4J_AUTH: neo4j/test
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
 
 volumes:
-  neo4j_logs:
-    driver: local
-  neo4j_config:
-    driver: local
+  redis_data:
+  mongo_data:
+  cassandra_data:
   neo4j_data:
-    driver: local
-  neo4j_plugins:
-    driver: local
-
-networks:
-  neo4j_network:
-    driver: bridge
+  neo4j_logs:

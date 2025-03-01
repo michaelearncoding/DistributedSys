@@ -25,6 +25,7 @@ use the pom.xml directly,
 ```text
 project-root/
 ├── pom.xml           # Maven configuration file (required)
+├── NoSQL/            # docker-composer.yml file to setup 4 different NoSQL databases
 ├── src/
 │   ├── main/
 │   │   ├── java/     # Java source code organized by package structure
