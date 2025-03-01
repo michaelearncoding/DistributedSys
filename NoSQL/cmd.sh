@@ -1,5 +1,6 @@
 # Redis（Key-Value Store）
 # Redis 适用于 缓存、会话存储、排行榜、计数器 等场景。
+# Redis 适合存储 频繁访问的数据，但不是理想的持久存储。
 
 
 # 练习场景：用户会话管理
@@ -82,9 +83,126 @@ Redis在这个过程中只是一个存储介质，它存储由应用服务生成
 
 
 
+# MongoDB（Document Store）
+MongoDB 适合存储 灵活的 JSON 结构，可以轻松扩展字段。
+# MongoDB 适用于 存储 JSON 文档，比如 用户信息、博客文章、日志数据 等。
+# 你需要存储用户的信息，如 姓名、年龄、技能、地址，并支持 查询和更新。
+
+docker exec -it mongo_container mongosh -u root -p example --authenticationDatabase admin
+# 切换到 `users` 数据库
+use users
+
+
+show dbs  // 只会显示有数据的数据库
+
+MongoDB使用"惰性创建"(lazy creation)模式来处理数据库:
+
+无需预先存在：
+
+use users 命令会切换到"users"数据库，不管它是否已经存在
+MongoDB不会立即检查该数据库是否存在，也不会立即创建它
+首次写入时创建：
+
+数据库只在首次插入数据时才被实际创建
+在此之前，数据库名称仅作为当前会话的上下文存在
 
 
 
 
+MongoDB中的 use users 命令说明
+这条命令用于切换到名为"users"的数据库，这是必要的原因：
 
 
+1. 选择工作环境：
+
+MongoDB服务器可以包含多个数据库
+use users 告诉MongoDB你要在哪个数据库上执行操作
+所有后续查询都会在这个数据库中执行
+
+2. 数据隔离：
+
+用户相关数据通常存储在专门的数据库中
+将不同类型的数据（用户、产品、订单等）分开存储
+便于管理权限和访问控制
+
+3. 自动创建：
+
+如果"users"数据库不存在，当你首次向其写入数据时，MongoDB会自动创建它
+
+
+4. 上下文设置：
+
+后续的db.collection.find()等命令需要知道在哪个数据库中执行
+不指定数据库将导致操作失败或在默认数据库上执行
+
+
+
+# 插入用户数据
+db.profiles.insertOne({
+    "user_id": 1001,
+    "name": "Ananya",
+    "age": 25,
+    "skills": ["Python", "Docker", "Machine Learning"],
+    "address": {
+        "city": "Toronto",
+        "country": "Canada"
+    }
+})
+
+
+
+# 查询所有用户
+db.profiles.find().pretty()
+
+# 查询特定用户
+db.profiles.find({ "user_id": 1001 }).pretty()
+
+# 更新用户技能
+db.profiles.updateOne({ "user_id": 1001 }, { $push: { "skills": "DevOps" } })
+
+# 删除用户
+db.profiles.deleteOne({ "user_id": 1001 })
+
+
+
+MongoDB与应用集成及金融行业优势
+MongoDB数据与应用集成
+MongoDB返回的JSON格式数据与现代应用架构无缝匹配：
+
+1.后端API集成
+
+// Node.js Express后端示例
+app.get('/api/users/:id', async (req, res) => {
+  const user = await db.profiles.findOne({ user_id: Number(req.params.id) });
+  res.json(user); // 直接返回MongoDB文档
+});
+
+2.前端应用消费
+
+// React前端示例
+fetch('/api/users/1001')
+  .then(response => response.json())
+  .then(userData => {
+    // 直接使用嵌套数据结构
+    console.log(`${userData.name} from ${userData.address.city}`);
+  });
+
+
+银行/保险行业优势
+客户360°视图
+
+单一文档存储完整客户画像
+无需复杂JOIN即可获取全面信息
+产品灵活性
+
+轻松适应复杂金融产品结构变化
+支持保险计划或银行产品的个性化配置
+监管合规
+
+轻松扩展文档字段适应新的合规要求
+内置版本控制和审计功能
+风险评估
+
+存储多层次风险因素和历史分析
+支持复杂嵌套数据结构的实时查询
+这种灵活性使金融机构可以快速适应市场变化，而不受传统关系型数据库固定架构的限制。
