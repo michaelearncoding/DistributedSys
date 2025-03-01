@@ -2,16 +2,22 @@ version: '3.9'
 
 services:
   redis:
-    image: redis:latest
+    image: redis:7
     container_name: redis_container
     ports:
       - "6379:6379"
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   mongo:
-    image: mongo:latest
+    image: mongo:6
     container_name: mongo_container
     ports:
       - "27017:27017"
@@ -20,9 +26,17 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    command: ["mongod", "--bind_ip_all"]  # Add this to fix the MongoDB fork issue
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
   cassandra:
-    image: cassandra:latest
+    image: cassandra:4
     container_name: cassandra_container
     ports:
       - "9042:9042"
@@ -30,18 +44,36 @@ services:
       - cassandra_data:/var/lib/cassandra
     environment:
       - CASSANDRA_CLUSTER_NAME=TestCluster
+      - MAX_HEAP_SIZE=512M
+      - HEAP_NEWSIZE=100M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "[ $$(nodetool statusgossip) = running ]"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   neo4j:
-    image: neo4j:latest
+    image: neo4j:5
     container_name: neo4j_container
     ports:
       - "7474:7474"  # Web interface
       - "7687:7687"  # Bolt protocol for queries
     environment:
-      NEO4J_AUTH: neo4j/test
+      NEO4J_AUTH: neo4j/testpassword  # Changed to meet 8 char minimum
+      NEO4J_dbms_memory_heap_max__size: 512m
+      # Alternative solution: override password length requirement
+      # NEO4J_dbms_security_auth__minimum__password__length: 4
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
 volumes:
   redis_data:
